@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-type OSType = &'static str;
+use crate::utils::{get_os_type, OSType};
 
 pub fn search_java_paths() -> Vec<String> {
     let os_type: OSType = get_os_type();
@@ -19,15 +19,6 @@ pub fn search_java_paths() -> Vec<String> {
         }
     }
     paths
-}
-
-fn get_os_type() -> OSType {
-    match std::env::consts::OS {
-        "windows" => "win32",
-        "macos" => "darwin",
-        "linux" => "linux",
-        _ => panic!("Unknown OS type"),
-    }
 }
 
 fn get_java_versions_dir(os_type: OSType) -> Option<String> {
