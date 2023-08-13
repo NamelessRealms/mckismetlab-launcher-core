@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use regex::Regex;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{global_path, utils};
 
@@ -26,57 +26,57 @@ struct VersionInfo {
 }
 
 #[derive(Debug, Deserialize)]
-struct ArgumentsGameRulesValues {
-    action: String,
-    features: serde_json::Value,
+pub struct ArgumentsGameRulesValues {
+    pub action: String,
+    pub features: serde_json::Value,
 }
 
 #[derive(Debug, Deserialize)]
-struct ArgumentsGameRules {
-    rules: Vec<ArgumentsGameRulesValues>,
-    value: Vec<String>,
+pub struct ArgumentsGameRules {
+    pub rules: Vec<ArgumentsGameRulesValues>,
+    pub value: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
-struct Argument {
-    name: String,
-    value: Option<String>,
+pub struct Argument {
+    pub argument: String,
+    pub value: String,
 }
 
 #[derive(Debug, Deserialize)]
-struct ArgumentGame {
-    arguments: Vec<Argument>,
-    arguments_rules: Vec<ArgumentsGameRules>,
+pub struct ArgumentGame {
+    pub arguments: Vec<Argument>,
+    pub arguments_rules: Vec<ArgumentsGameRules>,
 }
 
 #[derive(Debug, Deserialize)]
-struct Arguments {
-    game: ArgumentGame,
-    jvm: ArgumentJvm,
+pub struct Arguments {
+    pub game: ArgumentGame,
+    pub jvm: ArgumentJvm,
 }
 
 #[derive(Debug, Deserialize)]
-struct ArgumentsJvmRulesOSValues {
-    name: Option<String>,
-    arch: Option<String>,
+pub struct ArgumentsJvmRulesOSValues {
+    pub name: Option<String>,
+    pub arch: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-struct ArgumentsJvmRulesValues {
-    action: String,
-    os: ArgumentsJvmRulesOSValues,
+pub struct ArgumentsJvmRulesValues {
+    pub action: String,
+    pub os: ArgumentsJvmRulesOSValues,
 }
 
 #[derive(Debug, Deserialize)]
-struct ArgumentsJvmRules {
-    rules: Vec<ArgumentsJvmRulesValues>,
-    value: Vec<String>,
+pub struct ArgumentsJvmRules {
+    pub rules: Vec<ArgumentsJvmRulesValues>,
+    pub value: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
-struct ArgumentJvm {
-    arguments: Vec<Argument>,
-    arguments_rules: Vec<ArgumentsJvmRules>,
+pub struct ArgumentJvm {
+    pub arguments: Vec<Argument>,
+    pub arguments_rules: Vec<ArgumentsJvmRules>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -90,12 +90,12 @@ struct AssetIndex {
 }
 
 #[derive(Debug, Deserialize)]
-struct AssetObjects {
-    file_name: String,
-    file_path: PathBuf,
-    sha1: String,
-    size: i32,
-    download_url: String
+pub struct AssetObjects {
+    pub file_name: String,
+    pub file_path: PathBuf,
+    pub sha1: String,
+    pub size: i32,
+    pub url: String
 }
 
 #[derive(Debug, Deserialize)]
@@ -129,19 +129,19 @@ struct LibrariesArtifact {
 // }
 
 #[derive(Debug, Deserialize)]
-enum LibrariesType {
+pub enum LibrariesType {
     Artifact,
     Natives
 }
 
 #[derive(Debug, Deserialize)]
-struct Libraries {
-    r#type: LibrariesType,
-    file_name: String,
-    file_path: PathBuf,
-    sha1: String,
-    size: i32,
-    url: String
+pub struct Libraries {
+    pub r#type: LibrariesType,
+    pub file_name: String,
+    pub file_path: PathBuf,
+    pub sha1: String,
+    pub size: i32,
+    pub url: String
 }
 
 #[derive(Debug, Deserialize)]
@@ -152,21 +152,24 @@ struct ManifestClient {
 }
 
 #[derive(Debug, Deserialize)]
-struct Client {
-    file_name: String,
-    file_path: PathBuf,
-    sha1: String,
-    size: i32,
-    url: String
+pub struct MinecraftClient {
+    pub file_name: String,
+    pub file_path: PathBuf,
+    pub sha1: String,
+    pub size: i32,
+    pub url: String
 }
 
 #[derive(Debug, Deserialize)]
 pub struct MinecraftAssets {
-    arguments: Arguments,
-    assets_objects: Vec<AssetObjects>,
-    libraries: Vec<Libraries>,
-    client: Client,
-    main_class: String
+    pub arguments: Arguments,
+    pub assets_objects: Vec<AssetObjects>,
+    pub libraries: Vec<Libraries>,
+    pub client: MinecraftClient,
+    pub main_class: String,
+    pub minecraft_version: String,
+    pub assets_version: String,
+    pub version_type: String
 }
 
 pub fn assets(version: &str) -> MinecraftAssets {
@@ -187,12 +190,15 @@ pub fn assets(version: &str) -> MinecraftAssets {
         assets_objects: assets_objects.unwrap(),
         libraries: libraries,
         client: client,
-        main_class: manifest.get("mainClass").unwrap().to_string()
+        main_class: manifest.get("mainClass").unwrap().to_string().replace("\"", ""),
+        minecraft_version: version.to_string(),
+        assets_version: manifest.get("assets").unwrap().to_string().replace("\"", ""),
+        version_type: manifest.get("type").unwrap().to_string().replace("\"", ""),
     }
 }
 
-fn get_client(manifest_client: ManifestClient, version: &str) -> Client {
-    return Client {
+fn get_client(manifest_client: ManifestClient, version: &str) -> MinecraftClient {
+    return MinecraftClient {
         file_name: format!("{}.jar", version),
         file_path: Path::new(&global_path::get_common_dir_path()).join("versions").join(version).join(format!("{}.jar", version)),
         sha1: manifest_client.sha1,
@@ -269,7 +275,7 @@ fn is_lib_rules(rules: Option<Vec<serde_json::Value>>, natives: &Option<serde_js
                 "darwin" => get_natives_sys_obj_value(&natives, "osx"),
                 _ => None
             };
-            println!("{:#?}", system_value);
+            // println!("{:#?}", system_value);
             return system_value.is_some();
         }
         return true;
@@ -332,7 +338,7 @@ async fn get_assets_objects(manifest_asset_index: AssetIndex) -> Result<Vec<Asse
             file_path: objects_path.join(&dir_name).join(&object.hash),
             sha1: object.hash.clone(),
             size: object.size,
-            download_url: format!("https://resources.download.minecraft.net/{}/{}", dir_name, object.hash)
+            url: format!("https://resources.download.minecraft.net/{}/{}", dir_name, object.hash)
         }
     }).collect();
 
@@ -368,7 +374,7 @@ fn get_jvm_arguments(arguments_jvm: Vec<serde_json::Value>) -> ArgumentJvm {
     let mut arguments: Vec<Argument> = Vec::new();
     let mut arguments_rules: Vec<ArgumentsJvmRules> = Vec::new();
 
-    for argument_jvm in arguments_jvm {
+    for (i, argument_jvm) in arguments_jvm.iter().enumerate() {
         let mut rules: Vec<ArgumentsJvmRulesValues> = Vec::new();
         let mut value: Vec<String> = Vec::new();
 
@@ -399,13 +405,13 @@ fn get_jvm_arguments(arguments_jvm: Vec<serde_json::Value>) -> ArgumentJvm {
             if Regex::new(r"=\$\{[^}]*\}").unwrap().is_match(&argument_value) {
                 let value_split: Vec<&str> = argument_value.split("=${").collect();
                 arguments.push(Argument {
-                    name: value_split.get(0).unwrap().to_string(),
-                    value: None,
+                    argument: value_split.get(0).unwrap().to_string(),
+                    value: format!("${{{}}}", value_split.get(1).unwrap().to_string().replace("}", ""))
                 });
             } else if !Regex::new(r"\$\{[^}]*\}").unwrap().is_match(&argument_value) {
                 arguments.push(Argument {
-                    name: argument_value,
-                    value: None,
+                    argument: argument_value,
+                    value: arguments_jvm[i + 1].to_string().replace("\"", ""),
                 });
             }
         // ------------------------------------------------------------------------
@@ -454,7 +460,7 @@ fn get_game_arguments(arguments_game: Vec<serde_json::Value>) -> ArgumentGame {
     let mut arguments: Vec<Argument> = Vec::new();
     let mut arguments_rules: Vec<ArgumentsGameRules> = Vec::new();
 
-    for argument_game in arguments_game {
+    for (i, argument_game) in arguments_game.iter().enumerate() {
         let mut rules: Vec<ArgumentsGameRulesValues> = Vec::new();
         let mut value: Vec<String> = Vec::new();
 
@@ -473,8 +479,8 @@ fn get_game_arguments(arguments_game: Vec<serde_json::Value>) -> ArgumentGame {
             let re = Regex::new(r"\$\{[^}]*\}").unwrap();
             if !re.is_match(&argument_value) {
                 arguments.push(Argument {
-                    name: argument_value.to_string(),
-                    value: None,
+                    argument: argument_value.to_string(),
+                    value: arguments_game[i + 1].to_string().replace("\"", ""),
                 });
             }
         // ------------------------------------------------------------------------

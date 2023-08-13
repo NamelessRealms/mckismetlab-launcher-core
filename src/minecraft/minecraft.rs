@@ -1,1 +1,0 @@
-mod struct1;
