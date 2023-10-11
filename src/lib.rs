@@ -1,9 +1,8 @@
-pub mod java;
-pub mod io;
-pub mod minecraft;
-pub mod utils;
-pub mod global_path;
-pub mod assets_installer;
-pub mod game_process;
+mod api;
+mod config;
+mod minecraft;
+mod utils;
+mod parameters;
 
-pub use io::launcher_store::LauncherStore;
+pub use api::*;
+pub use minecraft::*;
